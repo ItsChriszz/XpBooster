@@ -1,0 +1,190 @@
+package start;
+
+
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.plugin.java.JavaPlugin;
+
+
+
+public class Test2 extends JavaPlugin implements Listener, CommandExecutor {
+
+	@Override
+    public void onEnable() {
+    	System.out.println("essentials enabled");
+    	Bukkit.getPluginManager().registerEvents(this, this);   //register listener
+	}
+	
+	class Xpbooster {
+	
+		private int multiplier = 1;  //what the xp booster is multiplied by eg 2,3,5
+		private boolean IsActive;  //is it active?
+		private int Delay;  //time limit for booster
+		
+		
+		//get multiplier
+		public int getmultiplier() {
+		return multiplier;
+		}
+		//get isActive
+		public boolean getIsActive() {
+			return IsActive;
+		}
+		//get delay
+		public int getDelay() {
+			return Delay;
+		}
+		//set IsActive
+		public void setIsActive(Boolean isActive) {
+			this.IsActive = getIsActive();
+		}
+		//set multiplier
+		public void setmultiplier(int newmultiplier) {
+			this.multiplier = newmultiplier;
+		}
+		//set Delay
+		public void setDelay(int newDelay) {
+			this.Delay = newDelay;
+		}
+	}
+	
+	
+	public static boolean isInt(String s) {
+	    try {
+	        Integer.parseInt(s);
+	    } catch (NumberFormatException nfe) {
+	        return false;
+	    }
+	    return true;
+	}
+	
+	
+	Xpbooster xp = new Xpbooster();  //retrieving xpbooster method
+	
+	
+	
+	public boolean onCommand(CommandSender sender, Command cmd, String alias, String[] args) {
+		Player p = (Player)sender;
+		if(args.length == 0) {
+		if(cmd.getName().equalsIgnoreCase("xpbooster")) {  //getting player command
+			if(p.hasPermission("StuckInGame.xpbooster")) {
+				p.sendMessage("Please enter the command again /xpbooster (ammount) (duration) ");
+				return true;
+			} else {
+      			p.sendMessage(ChatColor.RED + "Error no permission");
+      			return false;
+      		}
+		}
+		}
+		
+		
+		if(args.length == 1) {
+			if(p.hasPermission("StuckInGame.xpbooster")) {
+				if (isInt(args[0])) {       //checking if multiplier is an int value
+					
+					int num = Integer.parseInt(args[0]);  //changing to int
+					xp.setmultiplier(num);  //setting xp multiplier
+					p.sendMessage("Multiplier of xp set to " + num + " with no time limit");
+					return true;
+				}
+				else {
+					p.sendMessage("please enter a number for the multiplier");
+					return false;
+				}
+			}
+			else {
+      			p.sendMessage(ChatColor.RED + "Error no permission");
+      			return false;
+      		}
+			
+	}
+		if(args.length == 2) { 
+			if (isInt(args[0])) { //checking if /booster (ammount) is an int value
+				if(p.hasPermission("StuckInGame.xpbooster.duration")) {
+					if (isInt(args[1])) { //checking if /booster ammount (time) is an int value
+						
+
+							int ammount = Integer.parseInt(args[0]);  //changing ammount to int
+							int time = Integer.parseInt(args[1]);  //changing delay to int
+							
+							xp.setmultiplier(ammount);  //setting number to multiplier
+							xp.setDelay(time);  //setting delay
+							p.sendMessage("Multiplier of xp set to " + ammount + " for " + args[1] + " seconds");
+							xp.setIsActive(true);
+							int test = xp.getDelay() * 20;
+							  //ifIsactive is true start delay of code
+							  Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+							  	    public void run() {
+
+							            xp.setmultiplier(1);
+							            xp.setDelay(0);
+							            p.sendMessage("Booster ended");
+							            xp.setIsActive(false);
+							  	    }
+							  }, test);
+							
+							
+							
+							
+							
+							
+							return true;
+						}
+					if (!isInt(args[1])) { 
+						p.sendMessage("please enter a number for the time");
+						return false;
+					}
+					}
+				else {
+	      			p.sendMessage(ChatColor.RED + "Error no permission");
+	      			return false;
+					}
+		}
+			else {
+				p.sendMessage("please enter a number for the multiplier");
+				return false;
+			}
+	}
+		return false;
+	}
+
+
+	
+	
+	
+	
+	@EventHandler
+	public void onDeath(EntityDeathEvent e) {
+		Entity killer = e.getEntity().getKiller();
+		  //Entity entity = e.getEntity();
+		  //if (entity.getType().equals(EntityType.ZOMBIE)) {    get mob type
+
+			  int xpdropped = e.getDroppedExp();        //xp dropped by mob
+			  Player p = (Player) e.getEntity().getKiller();    // get killer as player
+			  
+			  
+	  //displaying xp give on every kill if with no delay
+	  if (killer instanceof Player){ 
+		  if(xp.getDelay() <= 1) {
+			  p.giveExp(xpdropped * xp.getmultiplier()); //give player xp from multiplier
+			  p.sendMessage("you got " + xpdropped * xp.getmultiplier());
+		  }
+	  } 
+	  if (killer instanceof Player) { 
+		  if(xp.getDelay() > 1) {
+		      int newXpDrop = xp.getmultiplier() * e.getDroppedExp();  //new xp given to player 
+		      
+			  p.sendMessage(ChatColor.GOLD + "you got " + newXpDrop + "xp" + " with a x" + xp.getmultiplier() + " Multiplier"  );
+			  p.giveExp(newXpDrop);
+		  }
+	}
+	}
+}
